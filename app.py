@@ -47,29 +47,31 @@ def clear_cache():
 # ================== DB OPERATIONS ==================
 def add_product(name, qty, price, category_id):
     supabase.table("produkty").insert({
-        "nazwa": name,
-        "liczba": qty,
-        "cena": price,
-        "kategoria_id": category_id
+        "nazwa": str(name),
+        "liczba": int(qty),
+        "cena": float(price),
+        "kategoria_id": int(category_id)
     }).execute()
     clear_cache()
 
 def update_product(pid, name, qty, price):
     supabase.table("produkty").update({
-        "nazwa": name,
-        "liczba": qty,
-        "cena": price
-    }).eq("id", pid).execute()
+        "nazwa": str(name),
+        "liczba": int(qty),
+        "cena": float(price)
+    }).eq("id", int(pid)).execute()
     clear_cache()
 
 def delete_product(pid):
-    supabase.table("produkty").delete().eq("id", pid).execute()
+    supabase.table("produkty").delete().eq("id", int(pid)).execute()
     clear_cache()
 
 # ================== UI ==================
 st.title("📦 Aplikacja magazynowa")
 
-tab1, tab2, tab3 = st.tabs(["📋 Produkty", "➕ Dodaj produkt", "📊 Statystyki"])
+tab1, tab2, tab3 = st.tabs(
+    ["📋 Produkty", "➕ Dodaj produkt", "📊 Statystyki"]
+)
 
 # ================== TAB 1 ==================
 with tab1:
@@ -81,7 +83,9 @@ with tab1:
 
     search = st.text_input("🔍 Wyszukaj produkt")
     if search:
-        products = products[products["nazwa"].str.contains(search, case=False)]
+        products = products[
+            products["nazwa"].str.contains(search, case=False)
+        ]
 
     st.dataframe(
         products[["id", "nazwa", "kategoria", "liczba", "cena"]],
@@ -95,16 +99,27 @@ with tab1:
         products["nazwa"]
     )
 
-    product = products[products["nazwa"] == selected_name].iloc[0]
+    product = products[
+        products["nazwa"] == selected_name
+    ].iloc[0]
 
     new_name = st.text_input("Nazwa", product["nazwa"])
-    new_qty = st.number_input("Ilość", min_value=0, value=int(product["liczba"]))
-    new_price = st.number_input("Cena", min_value=0.0, value=float(product["cena"]))
+    new_qty = st.number_input(
+        "Ilość", min_value=0, value=int(product["liczba"])
+    )
+    new_price = st.number_input(
+        "Cena", min_value=0.0, value=float(product["cena"])
+    )
 
     col1, col2 = st.columns(2)
 
     if col1.button("💾 Zapisz zmiany"):
-        update_product(product["id"], new_name, new_qty, new_price)
+        update_product(
+            product["id"],
+            new_name,
+            new_qty,
+            new_price
+        )
         st.success("Produkt zaktualizowany")
 
     if col2.button("🗑️ Usuń produkt"):
@@ -123,12 +138,22 @@ with tab2:
     qty = st.number_input("Ilość", min_value=0)
     price = st.number_input("Cena", min_value=0.0)
 
-    category_name = st.selectbox("Kategoria", categories["nazwa"])
-    category_id = categories[categories["nazwa"] == category_name]["id"].iloc[0]
+    category_name = st.selectbox(
+        "Kategoria",
+        categories["nazwa"]
+    )
+    category_id = categories[
+        categories["nazwa"] == category_name
+    ]["id"].iloc[0]
 
     if st.button("➕ Dodaj produkt"):
-        if name:
-            add_product(name, qty, price, category_id)
+        if name.strip():
+            add_product(
+                name,
+                qty,
+                price,
+                category_id
+            )
             st.success("Produkt dodany")
         else:
             st.error("Podaj nazwę produktu")
@@ -142,11 +167,20 @@ with tab3:
         st.stop()
 
     total_products = len(products)
-    total_value = (products["liczba"] * products["cena"]).sum()
+    total_value = (
+        products["liczba"] * products["cena"]
+    ).sum()
 
     col1, col2 = st.columns(2)
     col1.metric("📦 Liczba produktów", total_products)
-    col2.metric("💰 Wartość magazynu", f"{total_value:.2f} zł")
+    col2.metric(
+        "💰 Wartość magazynu",
+        f"{total_value:.2f} zł"
+    )
 
     st.subheader("⚠️ Niski stan magazynowy (<5)")
-    st.dataframe(products[products["liczba"] < 5])
+    st.dataframe(
+        products[products["liczba"] < 5],
+        use_container_width=True
+    )
+
